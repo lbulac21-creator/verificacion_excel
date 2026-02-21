@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Verificador de cedulas y nombres duplicados en Excel">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<title>VerifiCheck</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2230;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#e6edf3;--muted:#7d8590;
+  --green:#2dff7e;--green-dim:rgba(45,255,126,0.12);
+  --red:#ff4d6d;--red-dim:rgba(255,77,109,0.12);
+  --blue:#58a6ff;--blue-dim:rgba(88,166,255,0.12);
+  --amber:#f0b429;--amber-dim:rgba(240,180,41,0.12);
+  --mono:'DM Mono',monospace;--sans:'Outfit',sans-serif;
+  --radius:12px;--radius-sm:7px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.fade-up{animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both}
+.spinning{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+.wrapper{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 20px 60px}
+header{position:sticky;top:0;z-index:100;background:rgba(13,17,23,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px}
+.header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:14px;height:62px}
+.logo{font-family:var(--sans);font-size:20px;font-weight:900;letter-spacing:-.5px;color:var(--text);display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:grid;place-items:center;font-size:17px;box-shadow:0 0 16px rgba(45,255,126,.4)}
+.logo span{color:var(--green)}
+.hbadge{font-family:var(--mono);font-size:10px;background:var(--green-dim);color:var(--green);border:1px solid rgba(45,255,126,.25);padding:3px 9px;border-radius:20px;letter-spacing:.5px}
+.hstatus{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s ease-in-out infinite}
+.hero{padding:52px 0 36px;text-align:center}
+.eyebrow{font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.eyebrow::before,.eyebrow::after{content:'';width:28px;height:1px;background:linear-gradient(90deg,transparent,var(--green))}
+.eyebrow::after{transform:scaleX(-1)}
+.hero h1{font-size:clamp(32px,5vw,62px);font-weight:900;letter-spacing:-2px;line-height:1.0;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,#7d8590 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero h1 .acc{background:linear-gradient(135deg,var(--green) 0%,#00c9ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:15px;color:var(--muted);max-width:500px;margin:0 auto 28px;font-weight:300}
+.pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.pill{font-family:var(--mono);font-size:11px;padding:5px 13px;border-radius:20px;border:1px solid var(--border2);color:var(--muted);background:var(--bg2)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;position:relative;overflow:hidden;margin-top:20px}
+.card-accent{position:absolute;top:0;left:0;right:0;height:2px}
+.clabel{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.ldot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-zone:hover{border-color:var(--green);background:var(--green-dim)}
+.upload-zone input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.uicon{font-size:40px;margin-bottom:12px;display:block}
+.utext{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7}
+.utext strong{color:var(--green)}
+.col-config{display:none;margin-top:16px;gap:12px;flex-wrap:wrap}
+.col-config.show{display:flex}
+.cg{flex:1;min-width:140px}
+.cg label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px;display:block;margin-bottom:6px}
+select{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;border-radius:var(--radius-sm);outline:none;cursor:pointer;appearance:none}
+select:focus{border-color:var(--blue)}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.5px;padding:10px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-green{background:var(--green);color:#0d1117;font-weight:700}
+.btn-green:hover{box-shadow:0 0 20px rgba(45,255,126,.4);transform:translateY(-1px)}
+.btn-red{background:var(--red);color:#fff;font-weight:700}
+.btn-red:hover{box-shadow:0 0 20px rgba(255,77,109,.4);transform:translateY(-1px)}
+.btn-amber{background:var(--amber);color:#0d1117;font-weight:700}
+.btn-amber:hover{box-shadow:0 0 20px rgba(240,180,41,.4);transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+.alert{font-family:var(--mono);font-size:12px;padding:11px 14px;border-radius:var(--radius-sm);margin-top:12px;line-height:1.5}
+.alert-green{background:var(--green-dim);border:1px solid rgba(45,255,126,.25);color:var(--green)}
+.alert-red{background:var(--red-dim);border:1px solid rgba(255,77,109,.25);color:var(--red)}
+.alert-blue{background:var(--blue-dim);border:1px solid rgba(88,166,255,.25);color:var(--blue)}
+.alert-amber{background:var(--amber-dim);border:1px solid rgba(240,180,41,.25);color:var(--amber)}
+.results-panel{display:none;margin-top:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .4s ease}
+.results-panel.show{display:block}
+.rhead{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rtitle{font-size:15px;font-weight:700}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)}
+@media(max-width:600px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.scard{padding:18px 20px;border-right:1px solid var(--border);position:relative}
+.scard:last-child{border-right:none}
+.sicon{font-size:16px;margin-bottom:4px}
+.snum{font-family:var(--mono);font-size:32px;font-weight:500;line-height:1;margin-bottom:3px}
+.slabel{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.dl-banner{margin:16px 24px;padding:16px 20px;background:linear-gradient(135deg,rgba(255,77,109,.08),rgba(240,180,41,.08));border:1px solid rgba(255,77,109,.2);border-radius:var(--radius-sm);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dl-title{font-weight:700;font-size:14px;color:var(--red);margin-bottom:4px}
+.dl-sub{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.dl-btns{display:flex;gap:8px;flex-wrap:wrap}
+.fbar{display:flex;align-items:center;gap:8px;padding:14px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.fbtn{font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+.fbtn:hover{border-color:var(--text);color:var(--text)}
+.fbtn.active-all{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.fbtn.active-ced{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.fbtn.active-nom{border-color:var(--amber);color:var(--amber);background:var(--amber-dim)}
+.fbtn.active-ok{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.sbox{margin-left:auto;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 12px;outline:none;min-width:190px;transition:border-color .15s}
+.sbox:focus{border-color:var(--blue)}
+.sbox::placeholder{color:var(--muted)}
+.twrap{max-height:440px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+thead tr{background:var(--bg2);position:sticky;top:0;z-index:3}
+th{padding:10px 14px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.row-dup-ced{background:rgba(255,77,109,.06)!important}
+.row-dup-nom{background:rgba(240,180,41,.06)!important}
+.row-dup-both{background:rgba(255,77,109,.12)!important}
+.tag{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;display:inline-block;margin-right:3px}
+.tag-red{background:var(--red-dim);border:1px solid rgba(255,77,109,.3);color:var(--red)}
+.tag-amber{background:var(--amber-dim);border:1px solid rgba(240,180,41,.3);color:var(--amber)}
+.tag-green{background:var(--green-dim);border:1px solid rgba(45,255,126,.3);color:var(--green)}
+.rfoot{padding:10px 24px;border-top:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.empty{text-align:center;padding:52px 24px;color:var(--muted);font-family:var(--mono);font-size:13px}
+.empty .ei{font-size:44px;display:block;margin-bottom:12px}
+footer{border-top:1px solid var(--border);padding:18px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:40px}
+footer a{color:var(--green);text-decoration:none}
+@media(max-width:500px){.card{padding:16px}.hero{padding:32px 0 24px}.rhead,.fbar{padding:12px 16px}.dl-banner{margin:12px 16px}.sbox{min-width:130px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">&#10003;</div>
+      Verifi<span>Check</span>
+    </a>
+    <div class="hbadge">v3.0</div>
+    <div class="hstatus">
+      <div class="sdot"></div>
+      <span id="status-text">Listo</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrapper">
+
+  <section class="hero fade-up">
+    <div class="eyebrow">Sistema de Verificacion</div>
+    <h1>Detecta y elimina<br><span class="acc">duplicados al instante</span></h1>
+    <p class="hero-sub">Carga tu Excel, detecta cedulas y nombres repetidos, y descarga el archivo corregido sin duplicados automaticamente.</p>
+    <div class="pills">
+      <div class="pill">&#128202; Lee Excel / CSV</div>
+      <div class="pill">&#128308; Detecta cedulas duplicadas</div>
+      <div class="pill">&#129000; Detecta nombres repetidos</div>
+      <div class="pill">&#128465; Elimina duplicados</div>
+      <div class="pill">&#11015; Descarga Excel limpio</div>
+    </div>
+  </section>
+
+  <div class="card fade-up" style="animation-delay:.1s">
+    <div class="card-accent" style="background:linear-gradient(90deg,var(--green),#00c9ff)"></div>
+    <div class="clabel">
+      <div class="ldot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>
+      Cargar Archivo Excel
+    </div>
+
+    <div class="upload-zone" id="excel-drop"
+      ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
+      ondragleave="this.style.borderColor=''"
+      ondrop="handleDrop(event)">
+      <input type="file" id="excel-input" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])">
+      <span class="uicon">&#128202;</span>
+      <div class="utext">
+        <strong>Click o arrastra</strong> tu archivo aqui<br>
+        <span style="font-size:11px;opacity:.7;display:block;margin-top:3px">.xlsx &middot; .xls &middot; .csv</span>
+      </div>
+    </div>
+
+    <div id="excel-alert"></div>
+
+    <div class="col-config" id="col-config">
+      <div class="cg">
+        <label>Columna Cedula / ID</label>
+        <select id="sel-ced" onchange="verificar()"></select>
+      </div>
+      <div class="cg">
+        <label>Columna Nombre</label>
+        <select id="sel-nom" onchange="verificar()"></select>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-green" id="btn-ver" disabled onclick="verificar()">&#128269; Verificar duplicados</button>
+      <button class="btn btn-ghost" onclick="limpiar()">&#10005; Limpiar</button>
+    </div>
+  </div>
+
+  <div class="results-panel" id="results-panel">
+
+    <div class="rhead">
+      <div class="rtitle">&#128203; Resultados de Verificacion</div>
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:7px 14px" onclick="descargarExcel(null,'lista_completa')">&#11015; Descargar Excel completo</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="scard">
+        <div class="sicon">&#128203;</div>
+        <div class="snum" id="s-total" style="color:var(--blue)">0</div>
+        <div class="slabel">Total Registros</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--blue);opacity:.4"></div>
+      </div>
+      <div class="scard">
+        <div class="sicon">&#128308;</div>
+        <div class="snum" id="s-ced" style="color:var(--red)">0</div>
+        <div class="slabel">Ced. Duplicadas</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--red);opacity:.4"></div>
+      </div>
+      <div class="scard">
+        <div class="sicon">&#129000;</div>
+        <div class="snum" id="s-nom" style="color:var(--amber)">0</div>
+        <div class="slabel">Nombres Rep.</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--amber);opacity:.4"></div>
+      </div>
+      <div class="scard">
+        <div class="sicon">&#9989;</div>
+        <div class="snum" id="s-ok" style="color:var(--green)">0</div>
+        <div class="slabel">Limpios</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--green);opacity:.4"></div>
+      </div>
+    </div>
+
+    <div class="dl-banner" id="dl-banner" style="display:none">
+      <div style="flex:1">
+        <div class="dl-title">&#9888;&#65039; Se encontraron duplicados</div>
+        <div class="dl-sub" id="dl-desc"></div>
+      </div>
+      <div class="dl-btns">
+        <button class="btn btn-red" onclick="eliminarYDescargar('ced')">&#128465; Eliminar Ced. Dup.</button>
+        <button class="btn btn-amber" onclick="eliminarYDescargar('nom')">&#128465; Eliminar Nom. Rep.</button>
+        <button class="btn btn-green" onclick="eliminarYDescargar('all')">&#11015; Eliminar TODOS &rarr; Excel</button>
+      </div>
+    </div>
+
+    <div id="clean-banner" style="display:none;margin:16px 24px"></div>
+
+    <div class="fbar">
+      <button class="fbtn active-all" id="fb-all" onclick="filtrar('all')">Todos</button>
+      <button class="fbtn" id="fb-ced" onclick="filtrar('ced')">&#9888; Ced. Dup.</button>
+      <button class="fbtn" id="fb-nom" onclick="filtrar('nom')">&#9888; Nom. Rep.</button>
+      <button class="fbtn" id="fb-ok"  onclick="filtrar('ok')">&#10003; Limpios</button>
+      <input class="sbox" type="text" id="search" placeholder="Buscar nombre o cedula..." oninput="filtrar(currentFilter)">
+    </div>
+
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fila</th>
+            <th>Nombre</th>
+            <th>Cedula / ID</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="res-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="rfoot">
+      <span id="res-count">0 registros</span>
+      <span id="res-probs" style="color:var(--red)"></span>
+    </div>
+  </div>
+
+</div>
+
+<footer>VerifiCheck &mdash; Verificador de duplicados &middot; <a href="#">Hecho con Claude AI</a></footer>
+
+<script>
+var rawJson=[],allCols=[],processed=[],currentFilter='all',originalFileName='lista';
+var $=function(id){return document.getElementById(id);};
+function norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function setStatus(t){$('status-text').textContent=t;}
+function showAlert(id,type,msg){$(id).innerHTML=msg?'<div class="alert alert-'+type+'">'+msg+'</div>':''; }
+
+function handleDrop(e){
+  e.preventDefault();
+  $('excel-drop').style.borderColor='';
+  handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file){
+  if(!file)return;
+  originalFileName=file.name.replace(/\.[^.]+$/,'');
+  showAlert('excel-alert','blue','<span class="spinning"></span> Cargando '+esc(file.name)+'...');
+  setStatus('Leyendo...');
+  var doRead=function(){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var wb=XLSX.read(e.target.result,{type:'binary'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        rawJson=XLSX.utils.sheet_to_json(ws,{defval:''});
+        if(!rawJson.length){showAlert('excel-alert','red','El archivo esta vacio.');return;}
+        allCols=Object.keys(rawJson[0]);
+        setupSelectors(allCols);
+        verificar();
+        showAlert('excel-alert','green','&#10003; <strong>'+esc(file.name)+'</strong> &middot; '+rawJson.length+' filas');
+        $('btn-ver').disabled=false;
+        setStatus(rawJson.length+' registros');
+      }catch(err){showAlert('excel-alert','red','Error: '+err.message);setStatus('Error');}
+    };
+    reader.readAsBinaryString(file);
+  };
+  if(window.XLSX){doRead();}
+  else{var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=doRead;document.head.appendChild(s);}
+}
+
+function setupSelectors(cols){
+  var cedKw=['cedula','cedula','cc','dni','id','documento','ced','identificacion'];
+  var nomKw=['nombre','name','apellido','persona','completo'];
+  var cedCol=cols.find(function(c){return cedKw.some(function(k){return c.toLowerCase().includes(k);});})||cols[0]||'';
+  var nomCol=cols.find(function(c){return nomKw.some(function(k){return c.toLowerCase().includes(k);});})||cols[1]||cols[0]||'';
+  var opts=cols.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
+  $('sel-ced').innerHTML=opts;$('sel-nom').innerHTML=opts;
+  $('sel-ced').value=cedCol;$('sel-nom').value=nomCol;
+  $('col-config').classList.add('show');
+}
+
+function detectDups(rows,cc,nc){
+  var cedCount={},nomCount={};
+  rows.forEach(function(r){
+    var c=String(r[cc]||'').trim();
+    var n=norm(String(r[nc]||'')); 
+    if(c)cedCount[c]=(cedCount[c]||0)+1;
+    if(n)nomCount[n]=(nomCount[n]||0)+1;
+  });
+  return rows.map(function(r,i){
+    var c=String(r[cc]||'').trim();
+    var n=norm(String(r[nc]||'')); 
+    var obj={};
+    Object.keys(r).forEach(function(k){obj[k]=r[k];});
+    obj._row=i+2;obj._dupCed=!!(c&&cedCount[c]>1);obj._dupNom=!!(n&&nomCount[n]>1);
+    return obj;
+  });
+}
+
+function verificar(){
+  if(!rawJson.length)return;
+  var cc=$('sel-ced').value,nc=$('sel-nom').value;
+  processed=detectDups(rawJson,cc,nc);
+  var total=processed.length;
+  var ced=processed.filter(function(r){return r._dupCed;}).length;
+  var nom=processed.filter(function(r){return r._dupNom;}).length;
+  var ok=processed.filter(function(r){return !r._dupCed&&!r._dupNom;}).length;
+  $('s-total').textContent=total;$('s-ced').textContent=ced;$('s-nom').textContent=nom;$('s-ok').textContent=ok;
+  if(ced>0||nom>0){
+    $('dl-banner').style.display='flex';
+    $('clean-banner').style.display='none';
+    $('dl-desc').textContent=ced+' cedula(s) duplicada(s) · '+nom+' nombre(s) repetido(s). Elige que eliminar:';
+  }else{
+    $('dl-banner').style.display='none';
+    $('clean-banner').innerHTML='<div class="alert alert-green">&#9989; Lista limpia, sin duplicados! <button class="btn btn-green" style="margin-left:10px;padding:6px 14px;font-size:11px" onclick="descargarExcel(null,\'lista_limpia\')">&#11015; Descargar Excel</button></div>';
+    $('clean-banner').style.display='block';
+  }
+  currentFilter='all';activarFiltro('all');renderTabla(processed);
+  $('results-panel').classList.add('show');
+  setStatus(total+' registros · '+(ced+nom)+' problemas');
+}
+
+function eliminarYDescargar(tipo){
+  var cc=$('sel-ced').value,nc=$('sel-nom').value;
+  var seenCed={},seenNom={},eliminados=0;
+  var limpios=rawJson.filter(function(r){
+    var c=String(r[cc]||'').trim();
+    var n=norm(String(r[nc]||'')); 
+    var elim=false;
+    if(tipo==='ced'||tipo==='all'){if(c&&seenCed[c])elim=true;if(c)seenCed[c]=true;}
+    if(tipo==='nom'||tipo==='all'){if(n&&seenNom[n])elim=true;if(n)seenNom[n]=true;}
+    if(elim)eliminados++;
+    return !elim;
+  });
+  var label=tipo==='ced'?'sin_ced_duplicadas':tipo==='nom'?'sin_nom_repetidos':'sin_duplicados';
+  descargarExcel(limpios,originalFileName+'_'+label);
+  showAlert('excel-alert','green','&#9989; Se eliminaron <strong>'+eliminados+'</strong> fila(s). Excel descargado con <strong>'+limpios.length+'</strong> registros limpios.');
+  setStatus('Excel descargado · '+limpios.length+' registros');
+}
+
+function descargarExcel(data,nombre){
+  var filas=data||rawJson;
+  var clean=filas.map(function(r){var obj={};allCols.forEach(function(c){obj[c]=r[c];});return obj;});
+  var ws=XLSX.utils.json_to_sheet(clean);
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Datos');
+  XLSX.writeFile(wb,(nombre||'lista')+'.xlsx');
+}
+
+function filtrar(tipo){
+  currentFilter=tipo;activarFiltro(tipo);
+  var s=($('search').value||'').toLowerCase();
+  var cc=$('sel-ced').value,nc=$('sel-nom').value;
+  var list=processed;
+  if(tipo==='ced')list=list.filter(function(r){return r._dupCed;});
+  else if(tipo==='nom')list=list.filter(function(r){return r._dupNom;});
+  else if(tipo==='ok')list=list.filter(function(r){return !r._dupCed&&!r._dupNom;});
+  if(s)list=list.filter(function(r){return norm(String(r[nc]||'')).includes(norm(s))||String(r[cc]||''). toLowerCase().includes(s);});
+  renderTabla(list);
+}
+
+function activarFiltro(tipo){
+  ['all','ced','nom','ok'].forEach(function(t){$('fb-'+t).className='fbtn'+(t===tipo?' active-'+t:'');});
+}
+
+function renderTabla(list){
+  var cc=$('sel-ced').value,nc=$('sel-nom').value;
+  var tbody=$('res-tbody');
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="4"><div class="empty"><span class="ei">&#128269;</span>Sin registros para este filtro</div></td></tr>';
+    $('res-count').textContent='0 registros';$('res-probs').textContent='';return;
+  }
+  tbody.innerHTML=list.map(function(r){
+    var rc=(r._dupCed&&r._dupNom)?'row-dup-both':r._dupCed?'row-dup-ced':r._dupNom?'row-dup-nom':'';
+    var tags=(r._dupCed?'<span class="tag tag-red">&#9888; CED DUP</span>':'')+
+             (r._dupNom?'<span class="tag tag-amber">&#9888; NOM REP</span>':'')+
+             (!r._dupCed&&!r._dupNom?'<span class="tag tag-green">&#10003; OK</span>':''  );
+    var cedStyle=r._dupCed?'color:var(--red);font-weight:600':'';
+    var nomStyle=r._dupNom?'color:var(--amber);font-weight:600':'';
+    var nombre=esc(String(r[nc]||'')),cedula=esc(String(r[cc]||'')); 
+    return '<tr class="'+rc+'"><td style="color:var(--muted);font-size:11px">&#11035; '+r._row+'</td>'+
+           '<td style="'+nomStyle+';max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+nombre+'">'+
+           (nombre||'<span style="color:var(--muted);font-style:italic">&#8212;</span>')+'</td>'+
+           '<td style="'+cedStyle+'">'+( cedula||'<span style="color:var(--muted);font-style:italic">&#8212;</span>')+'</td>'+
+           '<td>'+tags+'</td></tr>';
+  }).join('');
+  var probs=list.filter(function(r){return r._dupCed||r._dupNom;}).length;
+  $('res-count').textContent=list.length+' registros';
+  $('res-probs').textContent=probs>0?'&#9888; '+probs+' con problemas':'';
+}
+
+function limpiar(){
+  rawJson=[];allCols=[];processed=[];
+  $('results-panel').classList.remove('show');
+  $('col-config').classList.remove('show');
+  $('btn-ver').disabled=true;
+  showAlert('excel-alert','','');
+  $('excel-input').value='';
+  setStatus('Listo');
+}
+
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
